@@ -65,8 +65,7 @@ private:
     double fs = 48000.0;
     int    numCh = 2;
 
-    juce::dsp::LinkwitzRileyFilter<float> hpIn[2];
-    float dcState[2] = {}, dcPrev[2] = {};   // bloqueur de continu 1 pole, apres le shaper
+    juce::dsp::LinkwitzRileyFilter<float> hpIn[2], hpOut[2];   // hpOut : les produits d'intermodulation retombes sous FREQ (et le continu) s'en vont
     juce::dsp::Oversampling<float> oversampler    { 2, 1, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, true };
     // La bande intacte traverse un suréchantillonneur jumeau (sans shaper) :
     // meme retard, donc alignee a l'echantillon avec la version saturee.

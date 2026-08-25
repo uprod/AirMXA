@@ -206,17 +206,20 @@ void SchematicDiagram::paint (juce::Graphics& g)
     g.setColour (palette::ink);
     g.drawLine (shp.getRight(), airY, hp2.getX(), airY, 1.2f);
     drawArrowHead (g, { hp2.getX(), airY }, { 1.0f, 0.0f }, 5.0f);
-    drawBlock (g, hp2, "DC BLOCK");
+    drawBlock (g, hp2, "HPF");
     {
-        // Glyphe : un condensateur de liaison (deux plaques) — le continu ne passe pas.
-        auto r = hp2.reduced (10.0f, 3.0f).withTrimmedTop (12.0f);
+        // Glyphe : le meme coude que le premier passe-haut — les produits
+        // retombes sous FREQ n'en sortent pas.
+        auto r = hp2.reduced (8.0f, 3.0f).withTrimmedTop (12.0f);
+        const float knee = juce::jmap (std::log (freqV / 1000.0f) / std::log (12.0f), 0.0f, 1.0f, r.getX() + 4.0f, r.getRight() - 8.0f);
+        juce::Path p;
+        p.startNewSubPath (knee - 10.0f, r.getBottom());
+        p.quadraticTo (knee - 2.0f, r.getBottom() - 1.0f, knee, r.getY() + 1.0f);
+        p.lineTo (r.getRight(), r.getY() + 1.0f);
         g.setColour (palette::inkMid);
-        g.drawLine (r.getX(), r.getCentreY(), r.getCentreX() - 3.0f, r.getCentreY(), 1.0f);
-        g.drawLine (r.getCentreX() - 3.0f, r.getY() + 1.0f, r.getCentreX() - 3.0f, r.getBottom() - 1.0f, 1.4f);
-        g.drawLine (r.getCentreX() + 3.0f, r.getY() + 1.0f, r.getCentreX() + 3.0f, r.getBottom() - 1.0f, 1.4f);
-        g.drawLine (r.getCentreX() + 3.0f, r.getCentreY(), r.getRight(), r.getCentreY(), 1.0f);
+        g.strokePath (p, juce::PathStrokeType (1.0f));
     }
-    drawValue (g, "20 Hz", hp2);
+    drawValue (g, "IM CLEAN-UP", hp2);
 
     // Rail des harmoniques vers le sommateur : epaisseur = MIX.
     g.setColour (palette::ink.withAlpha (0.9f));
@@ -247,7 +250,7 @@ void SchematicDiagram::paint (juce::Graphics& g)
                 juce::Justification::centredRight);
 
     // --- Legende de figure ----------------------------------------------------
-    const juce::String cap = "FIG. 2 - SIGNAL PATH, HIGH BAND, DRIVE, REAL SHAPER CURVE, DC BLOCK, MIX, SOLO";
+    const juce::String cap = "FIG. 2 - SIGNAL PATH, HIGH BAND, DRIVE, REAL SHAPER CURVE, IM CLEAN-UP, MIX, SOLO";
     g.setFont (fonts::lettering (10.0f));
     g.setColour (palette::inkMid);
     g.drawText (cap, caption.withTrimmedTop (4.0f), juce::Justification::bottomLeft);

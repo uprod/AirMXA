@@ -13,6 +13,8 @@ void AirEngine::prepare (double sampleRate, int samplesPerBlock, int numChannels
     {
         hpIn[ch].setType (juce::dsp::LinkwitzRileyFilterType::highpass);
         hpIn[ch].prepare (spec);
+        hpOut[ch].setType (juce::dsp::LinkwitzRileyFilterType::highpass);
+        hpOut[ch].prepare (spec);
     }
 
     oversampler.reset();
@@ -35,7 +37,8 @@ void AirEngine::reset()
     {
         hpIn[ch].reset();
         hpIn[ch].setCutoffFrequency (freqTarget);
-        dcState[ch] = dcPrev[ch] = 0.0f;
+        hpOut[ch].reset();
+        hpOut[ch].setCutoffFrequency (freqTarget);
         projNum[ch] = 0.0f;
         projDen[ch] = 1.0e-6f;
     }
@@ -67,7 +70,10 @@ void AirEngine::process (juce::AudioBuffer<float>& buffer)
     {
         freq += 0.3f * (freqTarget - freq);
         for (int ch = 0; ch < 2; ++ch)
+        {
             hpIn[ch].setCutoffFrequency (freq);
+            hpOut[ch].setCutoffFrequency (freq);
+        }
     }
 
     // 1. La bande a exciter : le haut du spectre, passe-haut LR4.
@@ -104,11 +110,11 @@ void AirEngine::process (juce::AudioBuffer<float>& buffer)
     // 3. Ne garder que le NEUF : on retire de la sortie du shaper sa part
     //    correlee a l'entree (projection <s.x>/<x.x>, fenetre 20 ms) — le
     //    fondamental comprime s'en va, les harmoniques restent, quel que
-    //    soit DRIVE. Puis bloqueur de continu (le mode EVEN en produit) et
-    //    melange, sans dephasage dans la bande.
+    //    soit DRIVE. Puis un passe-haut a FREQ : les produits
+    //    d'intermodulation (differences de frequences) retombes sous FREQ,
+    //    et le continu du mode EVEN, ne sortent pas. Puis melange.
     const float k    = 1.0f - std::exp (-1.0f / (0.1f * (float) fs));
     const float kp   = 1.0f - std::exp (-1.0f / (0.02f * (float) fs));
-    const float dcR  = 1.0f - 2.0f * juce::MathConstants<float>::pi * 20.0f / (float) fs;
     for (int n = 0; n < numSm; ++n)
     {
         const float m = mix.getNextValue() * 2.0f;
@@ -125,9 +131,7 @@ void AirEngine::process (juce::AudioBuffer<float>& buffer)
             projDen[ch] += kp * (x * x - projDen[ch]);
             const float c  = projDen[ch] > 1.0e-9f ? projNum[ch] / projDen[ch] : 1.0f;
             const float nw = sh - c * x;                              // le neuf seulement
-            const float hp = nw - dcPrev[ch] + dcR * dcState[ch];     // y = x - x[n-1] + R y[n-1]
-            dcPrev[ch] = nw;
-            dcState[ch] = hp;
+            const float hp = hpOut[ch].processSample (0, nw);
             const float air = hp * m;
             dryMono += io[n];
             airMono += air;

@@ -8,7 +8,7 @@ namespace airmxa
 
 // FIG. 2 - Le chemin du signal : le direct intact en haut ; en bas le rail
 // d'excitation HPF (FREQ) -> DRIVE -> SHAPER (la courbe reelle, ODD ou
-// EVEN) -> DC BLOCK -> x MIX, puis le sommateur et le commutateur SOLO qui
+// EVEN) -> HPF (intermodulation) -> x MIX, puis le sommateur et le commutateur SOLO qui
 // coupe le direct. Les epaisseurs de trait SONT les gains reels.
 class SchematicDiagram : public juce::Component
 {
