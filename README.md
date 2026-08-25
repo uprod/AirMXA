@@ -2,6 +2,8 @@
 
 A harmonic exciter in the Aphex Aural Exciter tradition: the band above FREQ is isolated, gently saturated (DRIVE) to generate new harmonics that were not in the source, cleaned up below FREQ and blended back in small doses (MIX). MODE picks odd harmonics (symmetric tanh — edge) or even harmonics (asymmetric — silk). The saturation stage runs 2× oversampled so the harmonics you create up top do not alias. SOLO lets you hear only what is being added. FIG. 1 is a live FFT: source in ink, generated harmonics in spot.
 
+![AirMXA — the sheet](Captures/AirMXA.png)
+
 Audio plugin (AU / VST3 / Standalone) built with [JUCE](https://juce.com). Part of the [MXA plugin suite](https://mxaudio.mescalina.fr/). macOS 11+ and Windows — Windows builds (VST3 + Standalone) are available in [Releases](https://github.com/uprod/AirMXA/releases).
 
 ## Build
