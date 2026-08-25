@@ -1,0 +1,50 @@
+# Compilation macOS automatique (GitHub Actions).
+# Binaires universels (arm64 + x86_64), formats AU + VST3 + Standalone.
+# - Lancement manuel (onglet Actions > macOS build > Run workflow)
+# - Ou en poussant un tag "v*" : le zip est alors publié dans l'onglet Releases.
+name: macOS build
+
+# Le jeton du workflow doit pouvoir écrire (créer la Release).
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout (avec le submodule JUCE)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure (CMake)
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build AU + VST3 + Standalone
+        run: cmake --build build --config Release --target ${{ github.event.repository.name }}_AU ${{ github.event.repository.name }}_VST3 ${{ github.event.repository.name }}_Standalone
+
+      - name: Package
+        run: |
+          name="${{ github.event.repository.name }}"
+          mkdir dist
+          cp -R "build/${name}_artefacts/Release/AU/"*.component dist/
+          cp -R "build/${name}_artefacts/Release/VST3/"*.vst3 dist/
+          cp -R "build/${name}_artefacts/Release/Standalone/"*.app dist/
+          ditto -c -k dist "${name}-macos.zip"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.repository.name }}-macos
+          path: ${{ github.event.repository.name }}-macos.zip
+
+      - name: Publish release (tags only)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ github.event.repository.name }}-macos.zip

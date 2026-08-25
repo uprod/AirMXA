@@ -1,0 +1,49 @@
+# Compilation Windows automatique (GitHub Actions).
+# - Lancement manuel (onglet Actions > Windows build > Run workflow)
+# - Ou en poussant un tag "v*" : le zip est alors publié dans l'onglet Releases.
+name: Windows build
+
+# Le jeton du workflow doit pouvoir écrire (créer la Release).
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout (avec le submodule JUCE)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure (CMake / Visual Studio)
+        run: cmake -B build
+
+      - name: Build VST3 + Standalone
+        run: cmake --build build --config Release --target ${{ github.event.repository.name }}_VST3 ${{ github.event.repository.name }}_Standalone
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $name = "${{ github.event.repository.name }}"
+          New-Item -ItemType Directory dist | Out-Null
+          Copy-Item -Recurse "build/${name}_artefacts/Release/VST3/*.vst3" dist/
+          Copy-Item "build/${name}_artefacts/Release/Standalone/*.exe" dist/
+          Compress-Archive -Path dist/* -DestinationPath "${name}-windows.zip"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.repository.name }}-windows
+          path: ${{ github.event.repository.name }}-windows.zip
+
+      - name: Publish release (tags only)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ github.event.repository.name }}-windows.zip

@@ -1,0 +1,22 @@
+# macOS
+.DS_Store
+._*
+
+# IDE
+.vscode/
+.idea/
+.claude/
+.impeccable/
+
+# Build
+build/
+install/
+cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+
+# Binaires compilés
+*.app
+*.component
+*.vst3
+*.zip
